@@ -1,0 +1,64 @@
+@using System.Collections.Generic
+@model WebApplication1.Models.StudentsIndexViewModel
+
+@{
+    ViewData["Title"] = "Students";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Students</h1>
+    <a asp-action="Create" class="btn btn-success">Add New Student</a>
+</div>
+
+<table class="table table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Mobileno</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            var students = Model?.Students ?? (IEnumerable<WebApplication1.Models.Students>)new List<WebApplication1.Models.Students>();
+        }
+        @foreach (var s in students)
+        {
+            <tr>
+                <td>@s.Id</td>
+                <td>@s.Name</td>
+                <td>@s.Email</td>
+                <td>@s.Mobileno</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@s.Id" class="btn btn-info btn-sm">Details</a>
+                    <a asp-action="Edit" asp-route-id="@s.Id" class="btn btn-warning btn-sm">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@s.Id" class="btn btn-danger btn-sm">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if ((Model?.TotalPages ?? 0) > 1)
+{
+    <nav aria-label="Students pagination">
+        <ul class="pagination">
+            <li class="page-item @((Model.Page <= 1) ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page - 1)">Previous</a>
+            </li>
+
+            @for (var p = 1; p <= (Model?.TotalPages ?? 1); p++)
+            {
+                <li class="page-item @(p == Model.Page ? "active" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-page="@p">@p</a>
+                </li>
+            }
+
+            <li class="page-item @((Model.Page >= (Model?.TotalPages ?? 1)) ? "disabled" : "")">
+                <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page + 1)">Next</a>
+            </li>
+        </ul>
+    </nav>
+}

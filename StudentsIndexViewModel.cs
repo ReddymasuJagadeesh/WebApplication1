@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,8 +7,6 @@ using WebApplication1.Models;
 
 namespace WebApplication1.Controllers
 {
-    // Attribute route so URLs like /Students/Edit/2 work reliably.
-    [Route("Students")]
     public class StudentsController : Controller
     {
         private readonly ApplicationDbContext context;
@@ -18,13 +16,17 @@ namespace WebApplication1.Controllers
             this.context = context;
         }
 
-        // GET: /Students or /Students/Index
-        [HttpGet("")]
-        [HttpGet("Index")]
+        // Shows a paged list of students. 'page' is 1-based. 'pageSize' controls how many items per page.
+        [HttpGet]
         public async Task<IActionResult> Index(int page = 1, int pageSize = 3)
         {
-            // Keep existing paging logic (clamped/safe)
-            if (pageSize <= 0) pageSize = 3;
+            var allowedPageSizes = new[] { 2, 3, 5, 10 };
+
+            if (pageSize <= 0 || !allowedPageSizes.Contains(pageSize))
+            {
+                pageSize = 3;
+            }
+
             if (page < 1) page = 1;
 
             var totalItems = await context.Students.CountAsync();
@@ -33,7 +35,7 @@ namespace WebApplication1.Controllers
             if (page > totalPages) page = totalPages;
 
             var students = await context.Students
-                                        .OrderBy(s => s.Id)
+                                        .OrderBy(s => s.Id)           // ensure Id order
                                         .Skip((page - 1) * pageSize)
                                         .Take(pageSize)
                                         .ToListAsync();
@@ -43,19 +45,20 @@ namespace WebApplication1.Controllers
                 Students = students,
                 Page = page,
                 PageSize = pageSize,
-                TotalItems = totalItems
+                TotalItems = totalItems,
+                AllowedPageSizes = allowedPageSizes
             };
 
             return View(vm);
         }
-            
-        [HttpGet("Create")]
+
+        [HttpGet]
         public IActionResult Create()
         {
             return View();
         }
 
-        [HttpPost("Create")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Students student)
         {
@@ -63,23 +66,14 @@ namespace WebApplication1.Controllers
             {
                 context.Students.Add(student);
                 await context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Index", "Students");
             }
             return View(student);
         }
 
-        // GET: /Students/Edit/2  OR /Students/Edit?id=2
-        [HttpGet("Edit/{id:int}")]
-        [HttpGet("Edit")]
+        [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            // allow both URL param and query param -- model binder fills 'id' either way
-            if (id <= 0)
-            {
-                // invalid id -> return 400 Bad Request or NotFound; prefer NotFound for resource lookup
-                return NotFound();
-            }
-
             var student = await context.Students.FindAsync(id);
             if (student == null)
             {
@@ -88,8 +82,7 @@ namespace WebApplication1.Controllers
             return View(student);
         }
 
-        // POST Edit remains unchanged (accepts originalId + student)
-        [HttpPost("Edit")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit([FromForm] int originalId, Students student)
         {
@@ -144,7 +137,7 @@ namespace WebApplication1.Controllers
                 await context.SaveChangesAsync();
                 await tx.CommitAsync();
 
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Index", "Students");
             }
             else
             {
@@ -161,46 +154,44 @@ namespace WebApplication1.Controllers
                 context.Update(existing);
                 await context.SaveChangesAsync();
 
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Index", "Students");
             }
         }
 
-        // GET: /Students/Details/2  OR /Students/Details?id=2
-        [HttpGet("Details/{id:int}")]
-        [HttpGet("Details")]
+        [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
-            if (id <= 0) return NotFound();
-
             var student = await context.Students.FindAsync(id);
-            if (student == null) return NotFound();
+            if (student == null)
+            {
+                return NotFound();
+            }
             return View(student);
         }
 
-        // GET: /Students/Delete/2  OR /Students/Delete?id=2
-        [HttpGet("Delete/{id:int}")]
-        [HttpGet("Delete")]
+        [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
-            if (id <= 0) return NotFound();
-
             var student = await context.Students.FindAsync(id);
-            if (student == null) return NotFound();
+            if (student == null)
+            {
+                return NotFound();
+            }
             return View(student);
         }
 
-        [HttpPost("Delete"), ActionName("Delete")]
+        [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (id <= 0) return NotFound();
-
             var student = await context.Students.FindAsync(id);
-            if (student == null) return NotFound();
-
+            if (student == null)
+            {
+                return NotFound();
+            }
             context.Students.Remove(student);
             await context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction("Index", "Students");
         }
     }
 }

@@ -1,0 +1,8 @@
+<PropertyGroup>
+  <TargetFramework>net10.0</TargetFramework>
+</PropertyGroup>
+
+<ItemGroup>
+  <!-- Razor views are handled by the SDK; if you explicitly include, use Content -->
+  <Content Include="Views\**\*.cshtml" />
+</ItemGroup>
