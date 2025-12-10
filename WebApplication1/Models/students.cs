@@ -12,11 +12,13 @@ namespace WebApplication1.Models
         public string Name { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Email is required.")]
-        [RegularExpression(@"^[A-Za-z0-9._%+-]+@gmail\.com$", ErrorMessage = "Email must be a valid Gmail address ending with @gmail.com.")]
+        [RegularExpression(@"^[a-z][a-z0-9._%+-]*@gmail\.com$",
+            ErrorMessage = "Email must be lowercase, contain no special characters except . _ % + -, and end with @gmail.com.")]
         public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Mobile number is required.")]
-        [RegularExpression(@"^\d{10}$", ErrorMessage = "Mobile number must be exactly 10 digits.")]
+        [RegularExpression(@"^(?!.*[^0-9]).{10}$",
+            ErrorMessage = "Mobile number must be exactly 10 digits and special characters are not allowed.")]
         public string Mobileno { get; set; } = string.Empty;
     }
 }

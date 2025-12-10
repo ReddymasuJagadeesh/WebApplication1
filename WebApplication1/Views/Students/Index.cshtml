@@ -10,8 +10,36 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1>Students</h1>
-    <a asp-action="Create" class="btn btn-success">Add New Student</a>
-</div>  
+
+    <div class="d-flex align-items-center" style="gap:.5rem;">
+        <a asp-action="Create" class="btn btn-success">Add New Student</a>
+
+        @* Delete All Students form (with antiforgery and confirm). Disabled when no students. *@
+        @if ((Model?.TotalItems ?? 0) > 0)
+        {
+            <form asp-action="DeleteAll" method="post" style="display:inline-block; margin:0;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger"
+                        onsubmit="return false;"
+                        onclick="return confirm('Are you sure you want to DELETE ALL students? This action cannot be undone.');">
+                    Delete All Students
+                </button>
+            </form>
+        }
+        else
+        {
+            <button type="button" class="btn btn-danger" disabled title="No students to delete">Delete All Students</button>
+        }
+    </div>
+</div>
+
+@* Status message from DeleteAll or other actions *@
+@if (TempData["StatusMessage"] != null)
+{
+    <div class="alert alert-info" role="alert">
+        @TempData["StatusMessage"]
+    </div>
+}
 
 <div class="mb-2">
     @if ((Model?.TotalItems ?? 0) > 0)

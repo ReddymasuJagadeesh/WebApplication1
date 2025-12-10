@@ -7,8 +7,6 @@ using WebApplication1.Models;
 
 namespace WebApplication1.Controllers
 {
-    // Attribute route so URLs like /Students/Edit/2 work reliably.
-    [Route("Students")]
     public class StudentsController : Controller
     {
         private readonly ApplicationDbContext context;
@@ -19,11 +17,9 @@ namespace WebApplication1.Controllers
         }
 
         // GET: /Students or /Students/Index
-        [HttpGet("")]
-        [HttpGet("Index")]
+        [HttpGet]
         public async Task<IActionResult> Index(int page = 1, int pageSize = 3)
         {
-            // Keep existing paging logic (clamped/safe)
             if (pageSize <= 0) pageSize = 3;
             if (page < 1) page = 1;
 
@@ -48,14 +44,14 @@ namespace WebApplication1.Controllers
 
             return View(vm);
         }
-            
-        [HttpGet("Create")]
+
+        [HttpGet]
         public IActionResult Create()
         {
             return View();
         }
 
-        [HttpPost("Create")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Students student)
         {
@@ -68,28 +64,20 @@ namespace WebApplication1.Controllers
             return View(student);
         }
 
-        // GET: /Students/Edit/2  OR /Students/Edit?id=2
-        [HttpGet("Edit/{id:int}")]
-        [HttpGet("Edit")]
+        // GET: /Students/Edit/2  
+        [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            // allow both URL param and query param -- model binder fills 'id' either way
-            if (id <= 0)
-            {
-                // invalid id -> return 400 Bad Request or NotFound; prefer NotFound for resource lookup
-                return NotFound();
-            }
+            if (id <= 0) return NotFound();
 
             var student = await context.Students.FindAsync(id);
-            if (student == null)
-            {
-                return NotFound();
-            }
+            if (student == null) return NotFound();
+
             return View(student);
         }
 
-        // POST Edit remains unchanged (accepts originalId + student)
-        [HttpPost("Edit")]
+        // POST Edit 
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit([FromForm] int originalId, Students student)
         {
@@ -110,7 +98,7 @@ namespace WebApplication1.Controllers
 
             if (student.Id <= 0)
             {
-                ModelState.AddModelError("Id", "Id must be a positive integer greater than zero.");
+                ModelState.AddModelError(nameof(student.Id), "Id must be a positive integer greater than zero.");
                 return View(student);
             }
 
@@ -119,7 +107,7 @@ namespace WebApplication1.Controllers
                 var exists = await context.Students.AnyAsync(s => s.Id == student.Id);
                 if (exists)
                 {
-                    ModelState.AddModelError("Id", "A student with this Id already exists.");
+                    ModelState.AddModelError(nameof(student.Id), "A student with this Id already exists.");
                     return View(student);
                 }
 
@@ -128,6 +116,15 @@ namespace WebApplication1.Controllers
                 if (existing == null)
                 {
                     return NotFound();
+                }
+
+                if (existing.Id == student.Id
+                    && string.Equals(existing.Name?.Trim(), student.Name?.Trim(), System.StringComparison.Ordinal)
+                    && string.Equals(existing.Email?.Trim(), student.Email?.Trim(), System.StringComparison.Ordinal)
+                    && string.Equals(existing.Mobileno?.Trim(), student.Mobileno?.Trim(), System.StringComparison.Ordinal))
+                {
+                    ModelState.AddModelError(string.Empty, "No changes detected. Nothing to save.");
+                    return View(student);
                 }
 
                 var newStudent = new Students
@@ -154,6 +151,14 @@ namespace WebApplication1.Controllers
                     return NotFound();
                 }
 
+                if (string.Equals(existing.Name?.Trim(), student.Name?.Trim(), System.StringComparison.Ordinal)
+                    && string.Equals(existing.Email?.Trim(), student.Email?.Trim(), System.StringComparison.Ordinal)
+                    && string.Equals(existing.Mobileno?.Trim(), student.Mobileno?.Trim(), System.StringComparison.Ordinal))
+                {
+                    ModelState.AddModelError(string.Empty, "No changes detected. Nothing to save.");
+                    return View(student);
+                }
+
                 existing.Name = student.Name;
                 existing.Email = student.Email;
                 existing.Mobileno = student.Mobileno;
@@ -165,9 +170,8 @@ namespace WebApplication1.Controllers
             }
         }
 
-        // GET: /Students/Details/2  OR /Students/Details?id=2
-        [HttpGet("Details/{id:int}")]
-        [HttpGet("Details")]
+        // GET: /Students/Details/2
+        [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
             if (id <= 0) return NotFound();
@@ -177,9 +181,8 @@ namespace WebApplication1.Controllers
             return View(student);
         }
 
-        // GET: /Students/Delete/2  OR /Students/Delete?id=2
-        [HttpGet("Delete/{id:int}")]
-        [HttpGet("Delete")]
+        // GET: /Students/Delete/2
+        [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
             if (id <= 0) return NotFound();
@@ -189,7 +192,7 @@ namespace WebApplication1.Controllers
             return View(student);
         }
 
-        [HttpPost("Delete"), ActionName("Delete")]
+        [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
@@ -200,6 +203,21 @@ namespace WebApplication1.Controllers
 
             context.Students.Remove(student);
             await context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAll()
+        {
+            var allStudents = await context.Students.ToListAsync();
+            if (allStudents.Count > 0)
+            {
+                context.Students.RemoveRange(allStudents);
+                await context.SaveChangesAsync();
+            }
+
             return RedirectToAction(nameof(Index));
         }
     }
